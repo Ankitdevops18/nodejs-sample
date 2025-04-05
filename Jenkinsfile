@@ -3,13 +3,13 @@ pipeline {
 
   environment {
     IMAGE_NAME = 'hello-node-app'
-    DOCKER_REGISTRY = 'your-dockerhub-username' // change this
+    DOCKER_REGISTRY = 'ankitofficial1821'
   }
 
   stages {
     stage('Checkout') {
       steps {
-        git 'https://github.com/your-repo/hello-node-app.git' // change to your repo
+        git 'https://github.com/Ankitdevops18/nodejs-sample.git' // change to your repo
       }
     }
 
