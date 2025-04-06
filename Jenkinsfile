@@ -9,6 +9,7 @@ pipeline {
   environment {
     IMAGE_NAME = 'hello-node-app'
     DOCKER_REGISTRY = 'ankitofficial1821'
+    KUBECONFIG = "/var/jenkins_home/.kube/config"
   }
 
 
