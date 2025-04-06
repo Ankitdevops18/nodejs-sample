@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodejs-service
+  namespace: default
+spec:
+  type: LoadBalancer
+  selector:
+    app: nodejs-green # or nodejs-${colour} based on which you want to serve
+    version: green  #current colour
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000

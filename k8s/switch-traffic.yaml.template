@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodejs-service
+  namespace: default
+spec:
+  type: LoadBalancer
+  selector:
+    app: nodejs-VERSION_PLACEHOLDER
+    version: VERSION_PLACEHOLDER
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
