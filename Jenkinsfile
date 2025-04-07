@@ -44,7 +44,7 @@ pipeline {
 
     stage('Checkout') {
       steps {
-        git 'https://github.com/Ankitdevops18/nodejs-sample.git' // change to your repo
+        git 'https://github.com/Ankitdevops18/nodejs-sample.git'
       }
     }
 
