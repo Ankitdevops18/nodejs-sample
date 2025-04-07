@@ -6,7 +6,7 @@ metadata:
 spec:
   type: LoadBalancer
   selector:
-    app: nodejs-blue  # or nodejs-blue based on which you want to serve
+    app: nodejs-blue 
   ports:
     - protocol: TCP
       port: 80
