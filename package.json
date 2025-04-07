@@ -1,7 +1,7 @@
 {
     "name": "hello-node-app",
     "version": "1.0.0",
-    "description": "Hello World from Nodejs app!",
+    "description": "Hello World from Nodejs app Green!",
     "main": "server.js",
     "scripts": {
       "start": "node server.js"
