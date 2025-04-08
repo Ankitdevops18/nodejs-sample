@@ -1,8 +1,8 @@
 pipeline {
     agent {
       kubernetes {
-          inheritFrom 'docker-agent'
-          defaultContainer 'docker-agent'
+          inheritFrom 'kaniko'
+          defaultContainer 'kaniko'
       }
   }
 
@@ -53,24 +53,24 @@ pipeline {
       }
     }
 
-    // stage('Build & Push Image (Kaniko)') {
-    //   steps {
-    //     container('kaniko') {
-    //       sh """
-    //       /kaniko/executor \
-    //         --dockerfile=Dockerfile \
-    //         --context=. \
-    //         --destination=${IMAGE_FULL_NAME} \
-    //         --insecure-pull=false \
-    //         --verbosity=info \
-    //         --cache=true \
-    //         --docker-config=/kaniko/.docker
+    stage('Build & Push Image (Kaniko)') {
+      steps {
+        container('kaniko') {
+          sh """
+          /kaniko/executor \
+            --dockerfile=Dockerfile \
+            --context=. \
+            --destination=${IMAGE_FULL_NAME} \
+            --insecure-pull=false \
+            --verbosity=info \
+            --cache=true \
+            --docker-config=/kaniko/.docker
 
-    //       cat /kaniko/.docker/config.json
-    //       """
-    //     }
-    //   }
-    // }
+          cat /kaniko/.docker/config.json
+          """
+        }
+      }
+    }
 
 
     stage('Detect Current Deployment') {
