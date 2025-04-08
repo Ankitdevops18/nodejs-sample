@@ -1,56 +1,72 @@
 pipeline {
-  agent any
+  agent {
+    kubernetes {
+      yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:latest
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - name: kaniko-secret
+      mountPath: /kaniko/.docker/
+  volumes:
+  - name: kaniko-secret
+    secret:
+      secretName: regcred
+"""
+    }
+  }
 
   tools {
     nodejs 'default'
-    dockerTool 'default'
   }
 
   environment {
     IMAGE_NAME = 'hello-node-app'
     DOCKER_REGISTRY = 'ankitofficial1821'
+    IMAGE_TAG = 'latest'
+    IMAGE_FULL_NAME = "docker.io/${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
     KUBECONFIG = "/var/jenkins_home/.kube/config"
   }
-
-
 
   stages {
 
     stage('Test Tools') {
       steps {
-        sh 'docker --version'
         sh 'kubectl version --client'
         sh 'node --version'
         sh 'git --version'
         sh 'npm --version'
-        sh 'aws --version'
       }
     }
 
     stage('Detect Current Deployment') {
-        steps {
-            script {
-                // Enable traffic switch by default
-                SWITCH_TRAFFIC = false
-                // Fetch current version label from the service
-                def currentColor = sh(
-                    script: "kubectl get svc nodejs-service -n default -o jsonpath='{.spec.selector.version}'",
-                    returnStdout: true
-                ).trim()
+      steps {
+        script {
+          SWITCH_TRAFFIC = false
+          def currentColor = sh(
+            script: "kubectl get svc nodejs-service -n default -o jsonpath='{.spec.selector.version}'",
+            returnStdout: true
+          ).trim()
 
-                echo "Currently live color is: ${currentColor}"
+          echo "Currently live color is: ${currentColor}"
 
-                // Toggle color
-                if (currentColor == "blue") {
-                    TARGET_COLOR = "green"
-                } else if (currentColor == "green") {
-                    TARGET_COLOR = "blue"
-                } else {
-                    error("Unknown color deployed: ${currentColor}")
-                }
-                echo "Target deployment color: ${TARGET_COLOR}"
-            }
+          if (currentColor == "blue") {
+            TARGET_COLOR = "green"
+          } else if (currentColor == "green") {
+            TARGET_COLOR = "blue"
+          } else {
+            error("Unknown color deployed: ${currentColor}")
+          }
+
+          echo "Target deployment color: ${TARGET_COLOR}"
         }
+      }
     }
 
     stage('Checkout') {
@@ -71,37 +87,42 @@ pipeline {
       }
     }
 
-    stage('Build Docker Image') {
+    stage('Build & Push Image (Kaniko)') {
       steps {
-        sh 'docker --version'
-        sh 'docker build -t $DOCKER_REGISTRY/$IMAGE_NAME:latest .'
-      }
-    }
+        container('kaniko') {
+          sh """
+          /kaniko/executor \
+            --dockerfile=Dockerfile \
+            --context=$(pwd) \
+            --destination=${IMAGE_FULL_NAME} \
+            --insecure-pull=false \
+            --insecure=false \
+            --skip-tls-verify=false \
+            --verbosity=info \
+            --cache=true \
+            --docker-config=/kaniko/.docker
 
-    stage('Push to Docker Hub') {
-      steps {
-        withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-          sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
-          sh 'docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest'
+          cat /kaniko/.docker/config.json
+          """
         }
       }
     }
 
     stage('Deploy to Target Color') {
-        steps {
-            echo "Deploying to ${TARGET_COLOR} environment..."
+      steps {
+        echo "Deploying to ${TARGET_COLOR} environment..."
 
-            sh """
-            kubectl apply -f k8s/${TARGET_COLOR}-deploy.yaml
-            kubectl apply -f k8s/service-${TARGET_COLOR}.yaml
-            kubectl get svc nodejs-${TARGET_COLOR}-service -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
-            """
-        }
+        sh """
+        kubectl apply -f k8s/${TARGET_COLOR}-deploy.yaml
+        kubectl apply -f k8s/service-${TARGET_COLOR}.yaml
+        kubectl get svc nodejs-${TARGET_COLOR}-service -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+        """
+      }
     }
 
     stage('Switch Traffic & Cleanup') {
       when {
-          expression { return SWITCH_TRAFFIC }
+        expression { return SWITCH_TRAFFIC }
       }
       steps {
         sh """
