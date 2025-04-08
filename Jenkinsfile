@@ -1,7 +1,6 @@
 pipeline {
      agent {
         kubernetes {
-            label 'kaniko-agent'
             defaultContainer 'kaniko'
             yaml """
 metadata:
