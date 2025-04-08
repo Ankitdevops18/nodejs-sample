@@ -1,11 +1,17 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: jenkins-service-reader
+  name: jenkins-agent-role
 rules:
 - apiGroups: [""]
   resources: ["services"]
   verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "pods/exec"]
+  verbs: ["create", "delete", "get", "list", "watch", "patch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "create", "delete", "update", "patch"]
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -18,5 +24,5 @@ subjects:
   namespace: jenkins
 roleRef:
   kind: ClusterRole
-  name: jenkins-service-reader
+  name: jenkins-agent-role
   apiGroup: rbac.authorization.k8s.io

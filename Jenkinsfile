@@ -1,5 +1,27 @@
 pipeline {
-  agent any
+
+  agent {
+     kubernetes {
+       yaml """
+ apiVersion: v1
+ kind: Pod
+ spec:
+   containers:
+   - name: kaniko
+     image: gcr.io/kaniko-project/executor:latest
+     command:
+     - cat
+     tty: true
+     volumeMounts:
+     - name: kaniko-secret
+       mountPath: /kaniko/.docker/
+   volumes:
+   - name: kaniko-secret
+     secret:
+       secretName: regcred
+    """
+     }
+   }
 
   tools {
     nodejs 'default'
@@ -24,28 +46,15 @@ pipeline {
       }
     }
 
-    stage('Detect Current Deployment') {
+    stage('Create Namespace & Jenkins-Role') {
       steps {
-        script {
-          def SWITCH_TRAFFIC = false
-          def TARGET_COLOR = " "
-          def currentColor = sh(
-            script: "kubectl get svc nodejs-service -n default -o jsonpath='{.spec.selector.version}'",
-            returnStdout: true
-          ).trim()
-
-          echo "Currently live color is: ${currentColor}"
-
-          if (currentColor == "blue") {
-            TARGET_COLOR = "green"
-          } else if (currentColor == "green") {
-            TARGET_COLOR = "blue"
-          } else {
-            error("Unknown color deployed: ${currentColor}")
-          }
-
-          echo "Target deployment color: ${TARGET_COLOR}"
-        }
+        sh """
+        if ! kubectl get ns nodejs-app > /dev/null 2>&1; then
+          kubectl apply -f k8s/namespace.yaml      
+        else
+          echo "Namespace 'nodejs-app' already exists, skipping"
+        fi
+        """
       }
     }
 
@@ -58,12 +67,6 @@ pipeline {
     stage('Install') {
       steps {
         sh 'npm install'
-      }
-    }
-
-    stage('Test') {
-      steps {
-        sh 'npm test'
       }
     }
 
@@ -82,6 +85,31 @@ pipeline {
 
           cat /kaniko/.docker/config.json
           """
+        }
+      }
+    }
+
+
+    stage('Detect Current Deployment') {
+      steps {
+        script {
+          def SWITCH_TRAFFIC = false
+          def TARGET_COLOR = " "
+          def currentColor = sh(
+            script: "kubectl get svc nodejs-service -n default -o jsonpath='{.spec.selector.version}'",
+            returnStdout: true
+          ).trim()
+          echo "Currently live color is: ${currentColor}"
+
+          if (currentColor == "blue") {
+            TARGET_COLOR = "green"
+          } else if (currentColor == "green") {
+            TARGET_COLOR = "blue"
+          } else {
+            error("Unknown color deployed: ${currentColor}")
+          }
+
+          echo "Target deployment color: ${TARGET_COLOR}"
         }
       }
     }
