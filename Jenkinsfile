@@ -2,10 +2,10 @@ pipeline {
   agent any
 
   tools {
-    nodejs 'NodeJS'
-    dockerTool 'Docker'
+    nodejs 'default'
+    dockerTool 'default'
   }
-  
+
   environment {
     IMAGE_NAME = 'hello-node-app'
     DOCKER_REGISTRY = 'ankitofficial1821'
