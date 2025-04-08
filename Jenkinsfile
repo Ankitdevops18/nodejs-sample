@@ -93,7 +93,7 @@ spec:
           sh """
           /kaniko/executor \
             --dockerfile=Dockerfile \
-            --context=$(pwd) \
+            --context=. \
             --destination=${IMAGE_FULL_NAME} \
             --insecure-pull=false \
             --insecure=false \
