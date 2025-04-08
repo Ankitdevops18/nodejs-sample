@@ -28,6 +28,7 @@ pipeline {
       steps {
         script {
           def SWITCH_TRAFFIC = false
+          def TARGET_COLOR = " "
           def currentColor = sh(
             script: "kubectl get svc nodejs-service -n default -o jsonpath='{.spec.selector.version}'",
             returnStdout: true
@@ -36,7 +37,7 @@ pipeline {
           echo "Currently live color is: ${currentColor}"
 
           if (currentColor == "blue") {
-            def TARGET_COLOR = "green"
+            TARGET_COLOR = "green"
           } else if (currentColor == "green") {
             TARGET_COLOR = "blue"
           } else {
