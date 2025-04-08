@@ -26,6 +26,7 @@ pipeline {
         sh 'aws --version'
         sh 'aws eks --region us-east-1 update-kubeconfig --name eks-cluster --kubeconfig $KUBECONFIG'
       }
+    }
 
     stage('Detect Current Deployment') {
         steps {
