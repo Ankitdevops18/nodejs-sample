@@ -1,8 +1,7 @@
 pipeline {
-
-  agent {
-     kubernetes {
-       yaml """
+    agent {
+        kubernetes {
+            yaml """
 apiVersion: v1
 kind: Pod
 metadata:
@@ -21,9 +20,9 @@ spec:
     - name: kaniko-secret
       secret:
         secretName: regcred
-    """
-     }
-   }
+"""
+        }
+    }
 
   tools {
     nodejs 'default'
