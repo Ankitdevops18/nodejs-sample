@@ -1,6 +1,6 @@
 pipeline {
   agent any
-  
+
   tools {
     nodejs 'default'
   }
@@ -27,7 +27,7 @@ pipeline {
     stage('Detect Current Deployment') {
       steps {
         script {
-          SWITCH_TRAFFIC = false
+          def SWITCH_TRAFFIC = false
           def currentColor = sh(
             script: "kubectl get svc nodejs-service -n default -o jsonpath='{.spec.selector.version}'",
             returnStdout: true
@@ -36,7 +36,7 @@ pipeline {
           echo "Currently live color is: ${currentColor}"
 
           if (currentColor == "blue") {
-            TARGET_COLOR = "green"
+            def TARGET_COLOR = "green"
           } else if (currentColor == "green") {
             TARGET_COLOR = "blue"
           } else {
@@ -75,8 +75,6 @@ pipeline {
             --context=. \
             --destination=${IMAGE_FULL_NAME} \
             --insecure-pull=false \
-            --insecure=false \
-            --skip-tls-verify=false \
             --verbosity=info \
             --cache=true \
             --docker-config=/kaniko/.docker
