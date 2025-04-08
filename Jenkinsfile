@@ -2,8 +2,9 @@ pipeline {
     agent {
         kubernetes {
             inheritFrom 'kaniko-agent'
+            defaultContainer 'kaniko'
         }
-    }
+  }
 
   tools {
     nodejs 'default'
