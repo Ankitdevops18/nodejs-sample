@@ -9,7 +9,7 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 
-# Expose the port
+# Expose the port 3000
 EXPOSE 3000
 
 # Start the app
