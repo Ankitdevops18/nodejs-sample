@@ -1,24 +1,27 @@
 pipeline {
-    agent {
-      kubernetes {
-        defaultContainer 'kaniko'
-        containerTemplate {
-          name 'kaniko'
-          image 'gcr.io/kaniko-project/executor:latest'
-          command 'cat'
-          ttyEnabled true
-          volumeMount {
-            mountPath '/kaniko/.docker/'
-            name 'kaniko-secret'
-          }
+     agent {
+        kubernetes {
+            label 'kaniko-agent'
+            defaultContainer 'kaniko'
+            yaml """
+metadata:
+  name: kaniko-agent
+spec:
+  containers:
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:latest
+      command:
+        - cat
+      tty: true
+      volumeMounts:
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker/
+  volumes:
+    - name: kaniko-secret
+      secret:
+        secretName: regcred
+"""
         }
-        volume {
-          secretVolume {
-            secretName 'regcred'
-            mountPath '/kaniko/.docker/'
-          }
-        }
-      }
     }
 
   tools {
