@@ -23,7 +23,7 @@ pipeline {
                 SWITCH_TRAFFIC = false
                 // Fetch current version label from the service
                 def currentColor = sh(
-                    script: "kubectl get svc nodejs-app-service -o jsonpath='{.spec.selector.version}'",
+                    script: "kubectl get svc nodejs-service-o jsonpath='{.spec.selector.version}'",
                     returnStdout: true
                 ).trim()
 
@@ -94,6 +94,9 @@ pipeline {
       steps {
         sh """
         sed 's/VERSION_PLACEHOLDER/${TARGET_COLOR}/g' k8s/switch-traffic.yaml.template > k8s/switch-traffic.yaml
+        git add --all
+        git commit -m "Switching traffic to ${TARGET_COLOR} environment"
+        git push -u origin master
         kubectl apply -f k8s/switch-traffic.yaml
         kubectl delete -f k8s/service-${currentColor}.yaml
         kubectl delete -f k8s/${currentColor}-deploy.yaml
