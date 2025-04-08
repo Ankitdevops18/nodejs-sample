@@ -24,7 +24,6 @@ pipeline {
         sh 'git --version'
         sh 'npm --version'
         sh 'aws --version'
-        sh 'aws eks --region us-east-1 update-kubeconfig --name eks-cluster --kubeconfig $KUBECONFIG'
       }
     }
 
