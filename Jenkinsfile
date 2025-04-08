@@ -1,7 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-            label 'kaniko-agent'
+            inheritFrom 'kaniko-agent'
         }
     }
 
