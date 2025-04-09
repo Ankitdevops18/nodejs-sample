@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-      kubernetes {
-          inheritFrom 'kaniko'
-          defaultContainer 'kaniko'
-      }
-  }
+  agent any
 
   tools {
     nodejs 'default'
@@ -26,6 +21,7 @@ pipeline {
         sh 'node --version'
         sh 'git --version'
         sh 'npm --version'
+        sh 'nerdctl --version'
       }
     }
 
@@ -53,58 +49,71 @@ pipeline {
       }
     }
 
-    stage('Build & Push Image (Kaniko)') {
+    stage('Login to DockerHub') {
       steps {
-        container('kaniko') {
-          sh """
-          /kaniko/executor \
-            --dockerfile=Dockerfile \
-            --context=. \
-            --destination=${IMAGE_FULL_NAME} \
-            --insecure-pull=false \
-            --verbosity=info \
-            --cache=true \
-            --docker-config=/kaniko/.docker
-
-          cat /kaniko/.docker/config.json
-          """
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+          sh 'echo "$DOCKER_PASSWORD" | nerdctl login -u "$DOCKER_USERNAME" --password-stdin'
         }
       }
     }
 
+    stage('Build & Push Image (nerdctl)') {
+      steps {
+        sh """
+        nerdctl build -t ${IMAGE_FULL_NAME} .
+        nerdctl push ${IMAGE_FULL_NAME}
+        nerdctl image rm ${IMAGE_FULL_NAME}
+        """
+      }
+    }
 
-    stage('Detect Current Deployment') {
+ 
+    stage('Detect Deployment Color') {
       steps {
         script {
-          def SWITCH_TRAFFIC = false
-          def TARGET_COLOR = " "
-          def currentColor = sh(
-            script: "kubectl get svc nodejs-service -n default -o jsonpath='{.spec.selector.version}'",
+          def serviceExists = sh(
+            script: "kubectl get svc nodejs-service -n default > /dev/null 2>&1 && echo true || echo false",
             returnStdout: true
           ).trim()
-          echo "Currently live color is: ${currentColor}"
 
-          if (currentColor == "blue") {
-            TARGET_COLOR = "green"
-          } else if (currentColor == "green") {
-            TARGET_COLOR = "blue"
+          if (serviceExists == "true") {
+            echo "Service exists. Proceeding with blue-green logic."
+            env.currentColor = sh(
+              script: "kubectl get svc nodejs-service -n default -o jsonpath='{.spec.selector.version}'",
+              returnStdout: true
+            ).trim()
+
+            echo "Currently live color is: ${env.currentColor}"
+
+            if (env.currentColor == "blue") {
+              env.TARGET_COLOR = "green"
+            } else if (env.currentColor == "green") {
+              env.TARGET_COLOR = "blue"
+            } else {
+              error("Unknown color deployed: ${env.currentColor}")
+            }
+
+            env.SWITCH_TRAFFIC = "true"
           } else {
-            error("Unknown color deployed: ${currentColor}")
+            echo "Service does not exist. Deploying fresh as blue."
+            env.TARGET_COLOR = "blue"
+            env.SWITCH_TRAFFIC = "false"
           }
 
-          echo "Target deployment color: ${TARGET_COLOR}"
+          echo "Target deployment color: ${env.TARGET_COLOR}"
         }
       }
     }
+
 
     stage('Deploy to Target Color') {
       steps {
-        echo "Deploying to ${TARGET_COLOR} environment..."
+        echo "Deploying to ${env.TARGET_COLOR} environment..."
 
         sh """
-        kubectl apply -f k8s/${TARGET_COLOR}-deploy.yaml
-        kubectl apply -f k8s/service-${TARGET_COLOR}.yaml
-        kubectl get svc nodejs-${TARGET_COLOR}-service -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+        kubectl apply -f k8s/${env.TARGET_COLOR}-deploy.yaml
+        kubectl apply -f k8s/service-${env.TARGET_COLOR}.yaml
+        kubectl get svc nodejs-${env.TARGET_COLOR}-service -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
         """
       }
     }
@@ -121,8 +130,8 @@ pipeline {
         git push -u origin master
         kubectl apply -f k8s/switch-traffic.yaml
         kubectl get svc nodejs-service -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
-        kubectl delete -f k8s/service-${currentColor}.yaml
-        kubectl delete -f k8s/${currentColor}-deploy.yaml
+        kubectl delete -f k8s/service-${env.currentColor}.yaml
+        kubectl delete -f k8s/${env.currentColor}-deploy.yaml
         """
       }
     }
