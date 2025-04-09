@@ -60,9 +60,9 @@ pipeline {
     stage('Build & Push Image (nerdctl)') {
       steps {
         sh """
-        nerdctl --address /run/containerd/containerd.sock build -t ${IMAGE_FULL_NAME} .
-        nerdctl --address /run/containerd/containerd.sock push ${IMAGE_FULL_NAME}
-        nerdctl --address /run/containerd/containerd.sock image rm ${IMAGE_FULL_NAME}
+        sudo nerdctl --address /run/containerd/containerd.sock build -t ${IMAGE_FULL_NAME} .
+        sudo nerdctl --address /run/containerd/containerd.sock push ${IMAGE_FULL_NAME}
+        sudo nerdctl --address /run/containerd/containerd.sock image rm ${IMAGE_FULL_NAME}
         """
       }
     }
