@@ -62,20 +62,19 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
           sh '''
             mkdir -p ~/.docker
-            cat <<EOF > ~/.docker/config.json
-            {
-              "auths": {
-                "https://index.docker.io/v1/": {
-                  "auth": "$(echo -n $DOCKER_USERNAME:$DOCKER_PASSWORD | base64)"
-                }
-              }
-            }
-            EOF
+            cat > ~/.docker/config.json <<EOF
+    {
+      "auths": {
+        "https://index.docker.io/v1/": {
+          "auth": "$(echo -n $DOCKER_USERNAME:$DOCKER_PASSWORD | base64)"
+        }
+      }
+    }
+    EOF
           '''
         }
       }
     }
-
 
     stage('Build & Push Image (nerdctl)') {
       steps {
