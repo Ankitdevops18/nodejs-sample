@@ -49,20 +49,42 @@ pipeline {
       }
     }
 
+    // stage('Login to DockerHub') {
+    //   steps {
+    //     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+    //       sh 'echo "$DOCKER_PASSWORD" | nerdctl login -u "$DOCKER_USERNAME" --password-stdin'
+    //     }
+    //   }
+    // }
+
     stage('Login to DockerHub') {
       steps {
         withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-          sh 'echo "$DOCKER_PASSWORD" | nerdctl login -u "$DOCKER_USERNAME" --password-stdin'
+          sh '''
+            mkdir -p ~/.docker
+            cat <<EOF > ~/.docker/config.json
+            {
+              "auths": {
+                "https://index.docker.io/v1/": {
+                  "auth": "$(echo -n $DOCKER_USERNAME:$DOCKER_PASSWORD | base64)"
+                }
+              }
+            }
+            EOF
+          '''
         }
       }
     }
 
+
     stage('Build & Push Image (nerdctl)') {
       steps {
         sh """
-        sudo nerdctl --address /run/containerd/containerd.sock build -t ${IMAGE_FULL_NAME} .
-        sudo nerdctl --address /run/containerd/containerd.sock push ${IMAGE_FULL_NAME}
-        sudo nerdctl --address /run/containerd/containerd.sock image rm ${IMAGE_FULL_NAME}
+        buildctl build \
+        --frontend dockerfile.v0 \
+        --local context=. \
+        --local dockerfile=. \
+        --output type=image,name=${IMAGE_FULL_NAME},push=true
         """
       }
     }
