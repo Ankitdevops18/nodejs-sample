@@ -6,6 +6,10 @@ app.get('/', (req, res) => {
   res.send('Hello World from Node.js! Green!');
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 app.listen(port, () => {
   console.log(`App is running on http://localhost:${port}`);
 });
