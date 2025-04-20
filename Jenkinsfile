@@ -86,14 +86,14 @@ pipeline {
       steps {
         script {
           def serviceExists = sh(
-            script: "kubectl get svc nodejs-service -n default > /dev/null 2>&1 && echo true || echo false",
+            script: "kubectl get svc nodejs-service -n nodejs-app > /dev/null 2>&1 && echo true || echo false",
             returnStdout: true
           ).trim()
 
           if (serviceExists == "true") {
             echo "Service exists. Proceeding with blue-green logic."
             env.currentColor = sh(
-              script: "kubectl get svc nodejs-service -n default -o jsonpath='{.spec.selector.version}'",
+              script: "kubectl get svc nodejs-service -n nodejs-app -o jsonpath='{.spec.selector.version}'",
               returnStdout: true
             ).trim()
 
@@ -127,7 +127,7 @@ pipeline {
         sh """
         kubectl apply -f k8s/${env.TARGET_COLOR}-deploy.yaml
         kubectl apply -f k8s/service-${env.TARGET_COLOR}.yaml
-        kubectl get svc nodejs-${env.TARGET_COLOR}-service -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+        kubectl get svc nodejs-${env.TARGET_COLOR}-service -n nodejs-app -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
         """
       }
     }
@@ -138,14 +138,14 @@ pipeline {
       }
       steps {
         sh """
-        sed 's/VERSION_PLACEHOLDER/${TARGET_COLOR}/g' k8s/switch-traffic.yaml.template > k8s/switch-traffic.yaml
+        sed 's/VERSION_PLACEHOLDER/${env.TARGET_COLOR}/g' k8s/switch-traffic.yaml.template > k8s/switch-traffic.yaml
         git config user.email "jenkins@yourdomain.com"
         git config user.name "Jenkins CI"
         git add --all
-        git commit -m "Switching traffic to ${TARGET_COLOR} environment"
+        git commit -m "Switching traffic to ${env.TARGET_COLOR} environment"
         git push -u origin master
         kubectl apply -f k8s/switch-traffic.yaml
-        kubectl get svc nodejs-service -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+        kubectl get svc nodejs-service -n nodejs-app -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
         kubectl delete -f k8s/service-${env.currentColor}.yaml
         kubectl delete -f k8s/${env.currentColor}-deploy.yaml
         """
