@@ -33,13 +33,6 @@ pipeline {
         else
           echo "Namespace 'nodejs-app' already exists, skipping"
         fi
-
-        if ! kubectl get ns kaniko > /dev/null 2>&1; then
-          kubectl apply -f k8s/kaniko_namespace.yaml      
-        else
-          echo "Namespace 'kaniko' already exists, skipping"
-        fi
-        """
       }
     }
 
