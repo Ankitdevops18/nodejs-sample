@@ -139,6 +139,8 @@ pipeline {
       steps {
         sh """
         sed 's/VERSION_PLACEHOLDER/${TARGET_COLOR}/g' k8s/switch-traffic.yaml.template > k8s/switch-traffic.yaml
+        git config user.email "jenkins@yourdomain.com"
+        git config user.name "Jenkins CI"
         git add --all
         git commit -m "Switching traffic to ${TARGET_COLOR} environment"
         git push -u origin master

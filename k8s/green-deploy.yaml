@@ -9,12 +9,12 @@ spec:
   selector:
     matchLabels:
       app: nodejs
-      color: green
+      version: green
   template:
     metadata:
       labels:
         app: nodejs
-        color: green
+        version: green
     spec:
       containers:
       - name: nodejs

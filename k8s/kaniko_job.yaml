@@ -4,7 +4,7 @@ metadata:
   name: kaniko-build-job
   namespace: kaniko
 spec:
-  backoffLimit: 1
+  backoffLimit: 5
   template:
     spec:
       restartPolicy: Never
@@ -12,9 +12,10 @@ spec:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
-        - --dockerfile=/workspace/Dockerfile
+        - --dockerfile=Dockerfile
         - --context=git://github.com/Ankitdevops18/nodejs-sample.git#refs/heads/master
         - --destination=docker.io/ankitofficial1821/hello-node-app:latest
+        - --verbosity=debug
         - --insecure
         - --skip-tls-verify
         env:
