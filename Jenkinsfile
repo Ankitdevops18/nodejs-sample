@@ -59,7 +59,7 @@ pipeline {
     stage('Deploy Kaniko Job') {
       steps {
         script {
-          sh 'kubectl apply -f kaniko_job.yaml -n kaniko'
+          sh 'kubectl apply -f k8s/kaniko_job.yaml -n kaniko'
         }
       }
     }
