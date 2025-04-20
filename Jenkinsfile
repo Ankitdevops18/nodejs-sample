@@ -138,11 +138,11 @@ pipeline {
       }
       steps {
         sh """
-        sed 's/VERSION_PLACEHOLDER/${TARGET_COLOR}/g' k8s/switch-traffic.yaml.template > k8s/switch-traffic.yaml
+        sed 's/VERSION_PLACEHOLDER/${env.TARGET_COLOR}/g' k8s/switch-traffic.yaml.template > k8s/switch-traffic.yaml
         git config user.email "jenkins@yourdomain.com"
         git config user.name "Jenkins CI"
         git add --all
-        git commit -m "Switching traffic to ${TARGET_COLOR} environment"
+        git commit -m "Switching traffic to ${env.TARGET_COLOR} environment"
         git push -u origin master
         kubectl apply -f k8s/switch-traffic.yaml
         app_url = $(kubectl get svc nodejs-service -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
