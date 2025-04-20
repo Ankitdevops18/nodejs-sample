@@ -33,6 +33,12 @@ pipeline {
         else
           echo "Namespace 'nodejs-app' already exists, skipping"
         fi
+
+        if ! kubectl get ns kaniko > /dev/null 2>&1; then
+          kubectl apply -f k8s/kaniko_namespace.yaml      
+        else
+          echo "Namespace 'kaniko' already exists, skipping"
+        fi
         """
       }
     }
@@ -49,42 +55,29 @@ pipeline {
       }
     }
 
-    // stage('Login to DockerHub') {
-    //   steps {
-    //     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-    //       sh 'echo "$DOCKER_PASSWORD" | nerdctl login -u "$DOCKER_USERNAME" --password-stdin'
-    //     }
-    //   }
-    // }
 
-    stage('Login to DockerHub') {
+    stage('Deploy Kaniko Job') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-          sh '''
-            mkdir -p ~/.docker
-            cat > ~/.docker/config.json <<EOF
-    {
-      "auths": {
-        "https://index.docker.io/v1/": {
-          "auth": "$(echo -n $DOCKER_USERNAME:$DOCKER_PASSWORD | base64)"
+        script {
+          sh 'kubectl apply -f kaniko_job.yaml -n kaniko'
         }
       }
     }
-    EOF
+    
+    stage('Wait for Job Completion') {
+      steps {
+        script {
+          // Wait for job to succeed (or fail)
+          sh '''
+          kubectl wait --for=condition=complete --timeout=300s job/kaniko-build-job -n kaniko || kubectl logs job/kaniko-build-job -n kaniko
           '''
         }
       }
     }
 
-    stage('Build & Push Image (nerdctl)') {
+    stage('Fetch Job Logs') {
       steps {
-        sh """
-        buildctl build \
-        --frontend dockerfile.v0 \
-        --local context=. \
-        --local dockerfile=. \
-        --output type=image,name=${IMAGE_FULL_NAME},push=true
-        """
+        sh 'kubectl logs job/kaniko-build-job -n kaniko'
       }
     }
 
