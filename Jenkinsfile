@@ -145,7 +145,8 @@ pipeline {
         git commit -m "Switching traffic to ${TARGET_COLOR} environment"
         git push -u origin master
         kubectl apply -f k8s/switch-traffic.yaml
-        kubectl get svc nodejs-service -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+        app_url = $(kubectl get svc nodejs-service -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        echo "Application URL: http://$app_url"
         kubectl delete -f k8s/service-${env.currentColor}.yaml
         kubectl delete -f k8s/${env.currentColor}-deploy.yaml
         """
