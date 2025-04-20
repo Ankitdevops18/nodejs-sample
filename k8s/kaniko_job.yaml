@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: kaniko-build-job
-  namespace: kaniko
+  namespace: jenkins
 spec:
   backoffLimit: 1
   template:

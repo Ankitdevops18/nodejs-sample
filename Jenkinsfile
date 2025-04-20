@@ -59,7 +59,7 @@ pipeline {
     stage('Deploy Kaniko Job') {
       steps {
         script {
-          sh 'kubectl apply -f k8s/kaniko_job.yaml -n kaniko'
+          sh 'kubectl apply -f k8s/kaniko_job.yaml -n jenkins'
         }
       }
     }
@@ -69,7 +69,7 @@ pipeline {
         script {
           // Wait for job to succeed (or fail)
           sh '''
-          kubectl wait --for=condition=complete --timeout=300s job/kaniko-build-job -n kaniko || kubectl logs job/kaniko-build-job -n kaniko
+          kubectl wait --for=condition=complete --timeout=300s job/kaniko-build-job -n jenkins || kubectl logs job/kaniko-build-job -n jenkins
           '''
         }
       }
@@ -77,7 +77,7 @@ pipeline {
 
     stage('Fetch Job Logs') {
       steps {
-        sh 'kubectl logs job/kaniko-build-job -n kaniko'
+        sh 'kubectl logs job/kaniko-build-job -n jenkins'
       }
     }
 
