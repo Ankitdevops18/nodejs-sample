@@ -18,6 +18,6 @@ spec:
     spec:
       containers:
       - name: nodejs
-        image: ankitofficial1821/hello-node-app:latest
+        image: ankitofficial1821/hello-node-app:1.0.0
         ports:
         - containerPort: 3000

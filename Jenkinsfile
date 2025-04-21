@@ -9,7 +9,7 @@ pipeline {
     SWITCH_TRAFFIC = "false"
     IMAGE_NAME = 'hello-node-app'
     DOCKER_REGISTRY = 'ankitofficial1821'
-    IMAGE_TAG = 'latest'
+    IMAGE_TAG = '1.0.0'
     IMAGE_FULL_NAME = "docker.io/${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
     KUBECONFIG = "/var/jenkins_home/.kube/config"
   }
