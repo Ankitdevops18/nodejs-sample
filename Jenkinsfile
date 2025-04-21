@@ -76,7 +76,10 @@ pipeline {
     stage('Deploy Kaniko Job') {
       steps {
         script {
-          sh 'kubectl apply -f k8s/kaniko_job.yaml -n kaniko'
+          sh '''
+          kubectl delete job kaniko-build-job -n kaniko
+          kubectl apply -f k8s/kaniko_job.yaml -n kaniko
+          '''
         }
       }
     }
