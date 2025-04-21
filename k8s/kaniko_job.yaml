@@ -18,6 +18,7 @@ spec:
         - --verbosity=debug
         - --insecure
         - --skip-tls-verify
+        - --no-cache
         env:
         - name: DOCKER_CONFIG
           value: /kaniko/.docker
