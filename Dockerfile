@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Copy files
 COPY package*.json ./
+COPY server.js ./
 RUN npm install
 COPY . .
 
