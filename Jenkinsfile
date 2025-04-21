@@ -6,7 +6,7 @@ pipeline {
   }
 
   environment {
-    SWITCH_TRAFFIC = "false"
+    SWITCH_TRAFFIC = "true"
     IMAGE_NAME = 'hello-node-app'
     DOCKER_REGISTRY = 'ankitofficial1821'
     IMAGE_TAG = 'latest'
@@ -23,24 +23,6 @@ pipeline {
         sh 'git --version'
         sh 'npm --version'
         sh 'nerdctl --version'
-      }
-    }
-
-    stage('Create Namespace & Jenkins-Role') {
-      steps {
-        sh """
-        if ! kubectl get ns nodejs-app > /dev/null 2>&1; then
-          kubectl apply -f k8s/namespace.yaml      
-        else
-          echo "Namespace 'nodejs-app' already exists, skipping"
-        fi
-
-        if ! kubectl get ns kaniko > /dev/null 2>&1; then
-          kubectl apply -f k8s/kaniko_namespace.yaml      
-        else
-          echo "Namespace 'kaniko' already exists, skipping"
-        fi
-        """
       }
     }
 
