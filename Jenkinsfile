@@ -80,9 +80,7 @@ pipeline {
             } else {
               error("Unknown color deployed: ${env.currentColor}")
             }
-            sh '''
-            sed 's/VERSION_PLACEHOLDER/${env.TARGET_COLOR}/g' server.js.template > server.js
-            '''
+            script: "sed 's/VERSION_PLACEHOLDER/${env.TARGET_COLOR}/g' server.js.template > server.js"
           } else {
             echo "Service does not exist. Deploying fresh as blue."
             env.TARGET_COLOR = "blue"
@@ -140,6 +138,7 @@ pipeline {
         sh """
         sed 's/VERSION_PLACEHOLDER/${env.TARGET_COLOR}/g' k8s/switch-traffic.yaml.template > k8s/switch-traffic.yaml
         kubectl apply -f k8s/switch-traffic.yaml
+        kubectl get svc nodejs-service -n nodejs-app -o jsonpath='{.spec.selector.version}'
         kubectl get svc nodejs-service -n nodejs-app -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
         kubectl delete -f k8s/service-${env.currentColor}.yaml
         kubectl delete -f k8s/${env.currentColor}-deploy.yaml
