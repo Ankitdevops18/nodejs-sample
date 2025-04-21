@@ -80,7 +80,9 @@ pipeline {
             } else {
               error("Unknown color deployed: ${env.currentColor}")
             }
+            sh '''
             sed 's/VERSION_PLACEHOLDER/${env.TARGET_COLOR}/g' server.js.template > server.js
+            '''
           } else {
             echo "Service does not exist. Deploying fresh as blue."
             env.TARGET_COLOR = "blue"
