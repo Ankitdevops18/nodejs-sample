@@ -6,7 +6,7 @@ pipeline {
   }
 
   environment {
-    SWITCH_TRAFFIC = "true"
+    SWITCH_TRAFFIC = "false"
     IMAGE_NAME = 'hello-node-app'
     DOCKER_REGISTRY = 'ankitofficial1821'
     IMAGE_TAG = '1.0.0'
