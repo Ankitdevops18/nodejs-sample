@@ -6,6 +6,7 @@ pipeline {
   }
 
   environment {
+    SWITCH_TRAFFIC = "false"
     IMAGE_NAME = 'hello-node-app'
     DOCKER_REGISTRY = 'ankitofficial1821'
     IMAGE_TAG = 'latest'
@@ -55,6 +56,41 @@ pipeline {
       }
     }
 
+    stage('Detect Deployment Color') {
+      steps {
+        script {
+          def serviceExists = sh(
+            script: "kubectl get svc nodejs-service -n nodejs-app > /dev/null 2>&1 && echo true || echo false",
+            returnStdout: true
+          ).trim()
+
+          if (serviceExists == "true") {
+            echo "Service exists. Proceeding with blue-green logic."
+            env.currentColor = sh(
+              script: "kubectl get svc nodejs-service -n nodejs-app -o jsonpath='{.spec.selector.version}'",
+              returnStdout: true
+            ).trim()
+
+            echo "Currently live color is: ${env.currentColor}"
+
+            if (env.currentColor == "blue") {
+              env.TARGET_COLOR = "green"
+            } else if (env.currentColor == "green") {
+              env.TARGET_COLOR = "blue"
+            } else {
+              error("Unknown color deployed: ${env.currentColor}")
+            }
+            sed 's/VERSION_PLACEHOLDER/${env.TARGET_COLOR}/g' server.js.template > server.js
+          } else {
+            echo "Service does not exist. Deploying fresh as blue."
+            env.TARGET_COLOR = "blue"
+            env.currentColor = "green"
+          }
+
+          echo "Target deployment color: ${env.TARGET_COLOR}"
+        }
+      }
+    }
 
     stage('Deploy Kaniko Job') {
       steps {
@@ -81,44 +117,6 @@ pipeline {
       }
     }
 
- 
-    stage('Detect Deployment Color') {
-      steps {
-        script {
-          def serviceExists = sh(
-            script: "kubectl get svc nodejs-service -n nodejs-app > /dev/null 2>&1 && echo true || echo false",
-            returnStdout: true
-          ).trim()
-
-          if (serviceExists == "true") {
-            echo "Service exists. Proceeding with blue-green logic."
-            env.currentColor = sh(
-              script: "kubectl get svc nodejs-service -n nodejs-app -o jsonpath='{.spec.selector.version}'",
-              returnStdout: true
-            ).trim()
-
-            echo "Currently live color is: ${env.currentColor}"
-
-            if (env.currentColor == "blue") {
-              env.TARGET_COLOR = "green"
-            } else if (env.currentColor == "green") {
-              env.TARGET_COLOR = "blue"
-            } else {
-              error("Unknown color deployed: ${env.currentColor}")
-            }
-
-            env.SWITCH_TRAFFIC = "true"
-          } else {
-            echo "Service does not exist. Deploying fresh as blue."
-            env.TARGET_COLOR = "blue"
-            env.SWITCH_TRAFFIC = "false"
-          }
-
-          echo "Target deployment color: ${env.TARGET_COLOR}"
-        }
-      }
-    }
-
 
     stage('Deploy to Target Color') {
       steps {
@@ -134,7 +132,7 @@ pipeline {
 
     stage('Switch Traffic & Cleanup') {
       when {
-        expression { return SWITCH_TRAFFIC }
+        expression { return SWITCH_TRAFFIC == "true" }
       }
       steps {
         sh """
