@@ -6,7 +6,7 @@ pipeline {
   }
 
   environment {
-    SWITCH_TRAFFIC = "true"
+    SWITCH_TRAFFIC = "false"
     IMAGE_NAME = 'hello-node-app'
     DOCKER_REGISTRY = 'ankitofficial1821'
     IMAGE_TAG = 'latest'
@@ -80,11 +80,6 @@ pipeline {
             } else {
               error("Unknown color deployed: ${env.currentColor}")
             }
-
-            sh """
-            sed 's/VERSION_PLACEHOLDER/${env.TARGET_COLOR}/g' server.js.template > server.js
-            cat server.js
-            """
           } else {
             echo "Service does not exist. Deploying fresh as blue."
             env.TARGET_COLOR = "blue"
