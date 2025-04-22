@@ -77,7 +77,10 @@ pipeline {
       steps {
         script {
           sh '''
-          kubectl delete job kaniko-build-job -n kaniko
+          if kubectl get job kaniko-build-job -n kaniko; then
+            echo "Job exists. Deleting..."
+            kubectl delete job kaniko-build-job -n kaniko
+          fi
           kubectl apply -f k8s/kaniko_job.yaml -n kaniko
           '''
         }
